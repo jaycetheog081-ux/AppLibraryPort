@@ -12,43 +12,64 @@ permissions:
 jobs:
   build:
     name: Build and Release Debian Package
-    runs-on: macos-14
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install build dependencies
+      - name: Install prerequisites
         run: |
-          brew update
-          brew install ldid make perl
+          sudo apt-get update
+          sudo apt-get install -y \
+            bash \
+            curl \
+            sudo \
+            git \
+            make \
+            perl \
+            fakeroot \
+            rsync \
+            zip \
+            build-essential \
+            libxml2
 
       - name: Install Theos
         run: |
-          git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
-          git clone https://github.com/theos/sdks.git "$HOME/theos/sdks"
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
 
           echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
-          echo "$HOME/theos/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Theos installation
+        run: |
+          test -d "$HOME/theos"
+          test -x "$HOME/theos/toolchain/linux/iphone/bin/clang"
+          echo "Theos installation verified."
 
       - name: Build Debian package
         run: |
           export THEOS="$HOME/theos"
+
           make clean
           make package FINALPACKAGE=1
 
-      - name: Verify package
+      - name: Verify Debian package
         run: |
           set -e
-          DEB_FILE="$(find packages -maxdepth 1 -name '*.deb' -print -quit)"
+
+          mkdir -p release
+
+          DEB_FILE=$(find packages -maxdepth 1 -type f -name '*.deb' | head -n 1)
 
           if [ -z "$DEB_FILE" ]; then
-            echo "No Debian package was produced."
+            echo "ERROR: No Debian package was generated."
             exit 1
           fi
 
-          echo "Built package: $DEB_FILE"
-          echo "DEB_FILE=$DEB_FILE" >> "$GITHUB_ENV"
+          cp "$DEB_FILE" release/
+
+          echo "Generated package:"
+          ls -lh release/
 
       - name: Set release tag
         run: |
@@ -64,7 +85,7 @@ jobs:
           tag_name: ${{ env.RELEASE_TAG }}
           name: AppLibrary12 ${{ env.RELEASE_TAG }}
           generate_release_notes: true
-          files: packages/*.deb
+          files: release/*.deb
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
