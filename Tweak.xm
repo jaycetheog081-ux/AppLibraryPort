@@ -27,23 +27,6 @@ static void AppLibrary12ShowLibrary(void) {
     [window makeKeyAndVisible];
 }
 
-static void AppLibrary12InstallGesture(void) {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        UIWindow *window = UIApplication.sharedApplication.keyWindow;
-        if (!window || AppLibrary12Gesture) {
-            return;
-        }
-
-        UIScreenEdgePanGestureRecognizer *gesture =
-            [[UIScreenEdgePanGestureRecognizer alloc]
-             initWithTarget:NSClassFromString(@"AppLibrary12GestureTarget")
-             action:@selector(handleGesture:)];
-
-        // The target is installed below using a regular recognizer.
-        (void)gesture;
-    });
-}
-
 @interface AppLibrary12GestureTarget : NSObject
 - (void)handleGesture:(UIScreenEdgePanGestureRecognizer *)gesture;
 @end
@@ -53,6 +36,7 @@ static void AppLibrary12InstallGesture(void) {
 - (void)handleGesture:(UIScreenEdgePanGestureRecognizer *)gesture {
     if (gesture.state == UIGestureRecognizerStateEnded) {
         CGPoint translation = [gesture translationInView:gesture.view];
+
         if (translation.x < -35.0) {
             AppLibrary12ShowLibrary();
         }
@@ -72,6 +56,7 @@ static AppLibrary12GestureTarget *AppLibrary12Target;
                                  (int64_t)(2.0 * NSEC_PER_SEC)),
                    dispatch_get_main_queue(), ^{
         UIWindow *window = UIApplication.sharedApplication.keyWindow;
+
         if (!window || AppLibrary12Gesture) {
             return;
         }
