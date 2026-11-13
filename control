@@ -1,0 +1,9 @@
+Package: com.applibrary12.tweak
+Name: AppLibrary12
+Version: 0.1.0
+Architecture: iphoneos-arm
+Description: An iOS 14-inspired App Library port for iOS 12.
+Maintainer: AppLibrary12
+Author: AppLibrary12
+Section: Tweaks
+Depends: mobilesubstrate
