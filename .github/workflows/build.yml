@@ -12,39 +12,33 @@ permissions:
 jobs:
   build:
     name: Build and Release Debian Package
-    runs-on: ubuntu-24.04
+    runs-on: macos-15
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install prerequisites
+      - name: Install Theos dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            curl \
-            git \
-            make \
-            perl \
-            fakeroot \
-            rsync \
-            zip \
-            build-essential \
-            libxml2-dev \
-            libplist-dev \
-            ldid
+          brew update
+          brew install ldid xz
 
       - name: Install Theos
         run: |
-          git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
-          git clone https://github.com/theos/sdks.git "$HOME/theos/sdks"
-
+          export THEOS="$HOME/theos"
           echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
           echo "$HOME/theos/bin" >> "$GITHUB_PATH"
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+
+      - name: Verify toolchain
+        run: |
+          test -x "$THEOS/bin/nic.pl"
+          command -v ldid
+          xcodebuild -version
+          echo "Theos: $THEOS"
 
       - name: Build Debian package
         run: |
-          export THEOS="$HOME/theos"
           make clean
           make package FINALPACKAGE=1
 
