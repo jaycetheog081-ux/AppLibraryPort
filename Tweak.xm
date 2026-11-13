@@ -1,6 +1,8 @@
 #import <UIKit/UIKit.h>
 #import "AppLibrary12ViewController.h"
 
+@class AppLibrary12GestureTarget;
+
 static UIWindow *AppLibrary12Window;
 static AppLibrary12GestureTarget *AppLibrary12Target;
 static NSMutableSet<NSValue *> *AppLibrary12AttachedWindows;
@@ -20,7 +22,6 @@ static void AppLibrary12ShowLibrary(void) {
     }
 
     UIWindow *window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
-
     window.windowLevel = UIWindowLevelAlert + 1;
     window.backgroundColor = UIColor.clearColor;
 
@@ -28,7 +29,6 @@ static void AppLibrary12ShowLibrary(void) {
         [[AppLibrary12ViewController alloc] init];
 
     window.rootViewController = controller;
-
     AppLibrary12Window = window;
 
     [window makeKeyAndVisible];
@@ -78,7 +78,6 @@ static void AppLibrary12AttachGestureToWindow(UIWindow *window) {
     gesture.delaysTouchesBegan = NO;
 
     [window addGestureRecognizer:gesture];
-
     [AppLibrary12AttachedWindows addObject:windowKey];
 }
 
@@ -106,7 +105,7 @@ static void AppLibrary12StartWindowMonitoring(void) {
                               (int64_t)(1.0 * NSEC_PER_SEC)),
                 dispatch_get_main_queue(),
                 ^{
-                    AppLibrary12FindWindows();
+                    AppLibrary12StartWindowMonitoring();
                 }
             );
         }
