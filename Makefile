@@ -8,7 +8,6 @@ TWEAK_NAME = AppLibrary12
 AppLibrary12_FILES = Tweak.xm AppLibrary12ViewController.m
 AppLibrary12_CFLAGS = -fobjc-arc -Wno-deprecated-declarations
 AppLibrary12_FRAMEWORKS = UIKit Foundation
-AppLibrary12_PRIVATE_FRAMEWORKS = SpringBoardServices
 
 INSTALL_TARGET_PROCESSES = SpringBoard
 
