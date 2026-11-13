@@ -15,15 +15,11 @@ static char AppLibrary12ApplicationKey;
 static id AppLibrary12GetWorkspace(void) {
     Class workspaceClass = NSClassFromString(@"LSApplicationWorkspace");
 
-    if (!workspaceClass) {
-        return nil;
-    }
+    if (!workspaceClass) return nil;
 
     SEL selector = NSSelectorFromString(@"defaultWorkspace");
 
-    if (![workspaceClass respondsToSelector:selector]) {
-        return nil;
-    }
+    if (![workspaceClass respondsToSelector:selector]) return nil;
 
     return ((id (*)(id, SEL))objc_msgSend)(workspaceClass, selector);
 }
@@ -62,8 +58,13 @@ static id AppLibrary12GetWorkspace(void) {
 - (void)buildInterface {
     self.view.backgroundColor = [UIColor colorWithWhite:0.08 alpha:1.0];
 
-    UIBlurEffect *blur =
-        [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemChromeMaterialDark];
+    UIBlurEffect *blur;
+
+    if (@available(iOS 13.0, *)) {
+        blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemChromeMaterialDark];
+    } else {
+        blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+    }
 
     UIVisualEffectView *backgroundBlur =
         [[UIVisualEffectView alloc] initWithEffect:blur];
@@ -143,8 +144,7 @@ static id AppLibrary12GetWorkspace(void) {
             constraintEqualToAnchor:safe.trailingAnchor constant:-22],
 
         [self.searchBar.topAnchor
-            constraintEqualToAnchor:self.titleLabel.bottomAnchor
-                           constant:8],
+            constraintEqualToAnchor:self.titleLabel.bottomAnchor constant:8],
 
         [self.searchBar.leadingAnchor
             constraintEqualToAnchor:safe.leadingAnchor constant:12],
@@ -153,8 +153,7 @@ static id AppLibrary12GetWorkspace(void) {
             constraintEqualToAnchor:safe.trailingAnchor constant:-12],
 
         [self.scrollView.topAnchor
-            constraintEqualToAnchor:self.searchBar.bottomAnchor
-                           constant:4],
+            constraintEqualToAnchor:self.searchBar.bottomAnchor constant:4],
 
         [self.scrollView.leadingAnchor
             constraintEqualToAnchor:safe.leadingAnchor constant:12],
@@ -214,23 +213,16 @@ static id AppLibrary12GetWorkspace(void) {
 - (void)loadApplications {
     id workspace = AppLibrary12GetWorkspace();
 
-    if (!workspace) {
-        return;
-    }
+    if (!workspace) return;
 
-    SEL selector =
-        NSSelectorFromString(@"allInstalledApplications");
+    SEL selector = NSSelectorFromString(@"allInstalledApplications");
 
-    if (![workspace respondsToSelector:selector]) {
-        return;
-    }
+    if (![workspace respondsToSelector:selector]) return;
 
     NSArray *installed =
         ((id (*)(id, SEL))objc_msgSend)(workspace, selector);
 
-    if (![installed isKindOfClass:NSArray.class]) {
-        return;
-    }
+    if (![installed isKindOfClass:NSArray.class]) return;
 
     NSMutableArray *valid = [NSMutableArray array];
 
@@ -243,13 +235,9 @@ static id AppLibrary12GetWorkspace(void) {
         NSString *name = [application localizedName];
         NSString *bundleID = [application applicationIdentifier];
 
-        if (!name.length || !bundleID.length) {
-            continue;
-        }
+        if (!name.length || !bundleID.length) continue;
 
-        if ([bundleID hasPrefix:@"com.apple.springboard"]) {
-            continue;
-        }
+        if ([bundleID hasPrefix:@"com.apple.springboard"]) continue;
 
         [valid addObject:application];
     }
@@ -406,10 +394,7 @@ static id AppLibrary12GetWorkspace(void) {
             dateB = [b lastUsedDate];
         }
 
-        if (!dateA && !dateB) {
-            return NSOrderedSame;
-        }
-
+        if (!dateA && !dateB) return NSOrderedSame;
         if (!dateA) return NSOrderedDescending;
         if (!dateB) return NSOrderedAscending;
 
@@ -436,10 +421,7 @@ static id AppLibrary12GetWorkspace(void) {
             dateB = [b installDate];
         }
 
-        if (!dateA && !dateB) {
-            return NSOrderedSame;
-        }
-
+        if (!dateA && !dateB) return NSOrderedSame;
         if (!dateA) return NSOrderedDescending;
         if (!dateB) return NSOrderedAscending;
 
@@ -479,13 +461,11 @@ static id AppLibrary12GetWorkspace(void) {
         NSInteger end = MIN(index + self.columnCount, names.count);
 
         for (NSInteger i = index; i < end; i++) {
-            UIView *card = [self categoryCard:names[i]];
-            [row addArrangedSubview:card];
+            [row addArrangedSubview:[self categoryCard:names[i]]];
         }
 
         for (NSInteger i = end; i < index + self.columnCount; i++) {
-            UIView *spacer = [[UIView alloc] init];
-            [row addArrangedSubview:spacer];
+            [row addArrangedSubview:[[UIView alloc] init]];
         }
 
         [self.contentStack addArrangedSubview:row];
@@ -529,8 +509,7 @@ static id AppLibrary12GetWorkspace(void) {
                 [iconRow addArrangedSubview:
                     [self appIconButton:apps[appIndex]]];
             } else {
-                UIView *empty = [[UIView alloc] init];
-                [iconRow addArrangedSubview:empty];
+                [iconRow addArrangedSubview:[[UIView alloc] init]];
             }
         }
 
@@ -600,7 +579,9 @@ static id AppLibrary12GetWorkspace(void) {
 
     if (!icon) {
         UIGraphicsBeginImageContextWithOptions(CGSizeMake(52, 52), NO, 0);
+
         [[UIColor colorWithWhite:0.35 alpha:1.0] setFill];
+
         [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, 52, 52)
                                      cornerRadius:11] fill];
 
@@ -751,15 +732,11 @@ static id AppLibrary12GetWorkspace(void) {
     LSApplicationProxy *application =
         objc_getAssociatedObject(button, &AppLibrary12ApplicationKey);
 
-    if (!application) {
-        return;
-    }
+    if (!application) return;
 
     NSString *bundleID = [application applicationIdentifier];
 
-    if (!bundleID.length) {
-        return;
-    }
+    if (!bundleID.length) return;
 
     id workspace = AppLibrary12GetWorkspace();
 
@@ -781,9 +758,7 @@ static id AppLibrary12GetWorkspace(void) {
     NSString *category =
         objc_getAssociatedObject(button, &AppLibrary12ApplicationKey);
 
-    if (!category.length) {
-        return;
-    }
+    if (!category.length) return;
 
     NSArray *applications = [self applicationsForCategory:category];
 
@@ -799,24 +774,23 @@ static id AppLibrary12GetWorkspace(void) {
             [UIAlertAction actionWithTitle:name
                                      style:UIAlertActionStyleDefault
                                    handler:^(__unused UIAlertAction *action) {
-                NSString *bundleID =
-                    [application applicationIdentifier];
+            NSString *bundleID = [application applicationIdentifier];
 
-                id workspace = AppLibrary12GetWorkspace();
+            id workspace = AppLibrary12GetWorkspace();
 
-                SEL selector =
-                    NSSelectorFromString(@"openApplicationWithBundleID:");
+            SEL selector =
+                NSSelectorFromString(@"openApplicationWithBundleID:");
 
-                if (workspace && [workspace respondsToSelector:selector]) {
-                    ((BOOL (*)(id, SEL, id))objc_msgSend)(
-                        workspace,
-                        selector,
-                        bundleID
-                    );
+            if (workspace && [workspace respondsToSelector:selector]) {
+                ((BOOL (*)(id, SEL, id))objc_msgSend)(
+                    workspace,
+                    selector,
+                    bundleID
+                );
 
-                    [self closeLibrary];
-                }
-            }]];
+                [self closeLibrary];
+            }
+        }]];
     }
 
     [alert addAction:
