@@ -1,4 +1,5 @@
 #import "AppLibrary12ViewController.h"
+#import <objc/message.h>
 #import <objc/runtime.h>
 
 @interface LSApplicationProxy : NSObject
@@ -6,11 +7,19 @@
 - (NSString *)applicationIdentifier;
 @end
 
-@interface LSApplicationWorkspace : NSObject
-+ (instancetype)defaultWorkspace;
-- (NSArray *)allInstalledApplications;
-- (BOOL)openApplicationWithBundleID:(NSString *)bundleID;
-@end
+static id AppLibrary12GetWorkspace(void) {
+    Class workspaceClass = NSClassFromString(@"LSApplicationWorkspace");
+    if (!workspaceClass) {
+        return nil;
+    }
+
+    SEL selector = NSSelectorFromString(@"defaultWorkspace");
+    if (![workspaceClass respondsToSelector:selector]) {
+        return nil;
+    }
+
+    return ((id (*)(id, SEL))objc_msgSend)(workspaceClass, selector);
+}
 
 @interface AppLibrary12ViewController () <
     UITableViewDataSource,
@@ -18,7 +27,6 @@
     UISearchBarDelegate
 >
 
-@property (nonatomic, strong) UIView *backgroundView;
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UISearchBar *searchBar;
 @property (nonatomic, strong) UITableView *tableView;
@@ -60,8 +68,8 @@
 
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.text = @"App Library";
-    self.titleLabel.font = [UIFont systemFontOfSize:34
-                                             weight:UIFontWeightBold];
+    self.titleLabel.font =
+        [UIFont systemFontOfSize:34 weight:UIFontWeightBold];
     self.titleLabel.textColor = UIColor.whiteColor;
     self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [content addSubview:self.titleLabel];
@@ -95,8 +103,10 @@
     self.tableView.keyboardDismissMode =
         UIScrollViewKeyboardDismissModeOnDrag;
     self.tableView.translatesAutoresizingMaskIntoConstraints = NO;
+
     [self.tableView registerClass:UITableViewCell.class
            forCellReuseIdentifier:@"ApplicationCell"];
+
     [content addSubview:self.tableView];
 
     UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
@@ -133,10 +143,28 @@
 }
 
 - (void)loadApplications {
-    LSApplicationWorkspace *workspace =
-        [LSApplicationWorkspace defaultWorkspace];
+    id workspace = AppLibrary12GetWorkspace();
 
-    NSArray *installed = [workspace allInstalledApplications];
+    if (!workspace) {
+        self.applications = @[];
+        self.filteredApplications = @[];
+        [self.tableView reloadData];
+        return;
+    }
+
+    SEL installedSelector =
+        NSSelectorFromString(@"allInstalledApplications");
+
+    if (![workspace respondsToSelector:installedSelector]) {
+        return;
+    }
+
+    NSArray *installed =
+        ((id (*)(id, SEL))objc_msgSend)(workspace, installedSelector);
+
+    if (![installed isKindOfClass:NSArray.class]) {
+        installed = @[];
+    }
 
     NSMutableArray *validApplications = [NSMutableArray array];
 
@@ -200,9 +228,20 @@
 
     NSString *bundleID = [application applicationIdentifier];
 
-    if (bundleID.length) {
-        [[LSApplicationWorkspace defaultWorkspace]
-            openApplicationWithBundleID:bundleID];
+    if (!bundleID.length) {
+        return;
+    }
+
+    id workspace = AppLibrary12GetWorkspace();
+    SEL openSelector =
+        NSSelectorFromString(@"openApplicationWithBundleID:");
+
+    if (workspace && [workspace respondsToSelector:openSelector]) {
+        ((BOOL (*)(id, SEL, id))objc_msgSend)(
+            workspace,
+            openSelector,
+            bundleID
+        );
 
         [self closeLibrary];
     }
@@ -231,8 +270,7 @@
 }
 
 - (void)closeLibrary {
-    UIWindow *window = self.view.window;
-    window.hidden = YES;
+    self.view.window.hidden = YES;
 }
 
 - (BOOL)prefersStatusBarHidden {
